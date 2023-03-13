@@ -79,7 +79,6 @@ enum Color {
 /// Returns an Err if the graph contains a cycle.
 /// Based on the algorithm presented by Cormen et al. in chapter 20 of
 /// Introduction to Algorithms (4th ed).
-
 pub fn topological_sort(graph: &DirectedGraph) -> Result<LinkedList<Vertex>, &'static str> {
     let mut colors = HashMap::with_capacity(graph.num_vertices());
     for v in graph.vertices().into_iter() {
@@ -87,8 +86,8 @@ pub fn topological_sort(graph: &DirectedGraph) -> Result<LinkedList<Vertex>, &'s
     }
     let mut schedule = LinkedList::new();
     for v in graph.vertices().into_iter() {
-        if *colors.get(v).unwrap() == Color::White {
-            depth_first_visit(&graph, *v, &mut colors, &mut schedule);
+        if colors[v] == Color::White {
+            depth_first_visit(&graph, *v, &mut colors, &mut schedule)?;
         }
     }
 
@@ -96,17 +95,21 @@ pub fn topological_sort(graph: &DirectedGraph) -> Result<LinkedList<Vertex>, &'s
 }
 
 fn depth_first_visit(graph: &DirectedGraph, v: Vertex, 
-                         colors: &mut HashMap<Vertex, Color>, 
-                         schedule: &mut LinkedList<Vertex>)
+                         colors: &mut HashMap<Vertex, Color>,
+                         schedule: &mut LinkedList<Vertex>) 
+-> Result<(), &'static str>
 {
     colors.insert(v, Color::Gray);
     for u in graph.edges_from(v).unwrap().into_iter() {
-        if *colors.get(u).unwrap() == Color::White {
-            depth_first_visit(graph, *u, colors, schedule);
+        if colors[u] == Color::White {
+            depth_first_visit(graph, *u, colors, schedule)?;
+        } else if colors[u] == Color::Gray {
+            return Err("Graph is acyclic");
         }
     }
     schedule.push_front(v);
     colors.insert(v, Color::Black);
+    Ok(())
 }
 
 #[cfg(test)]
